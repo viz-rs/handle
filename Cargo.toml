@@ -1,0 +1,14 @@
+[package]
+name = "handle"
+version = "1.0.0"
+authors = ["Fangdun Cai <cfddream@gmail.com>"]
+edition = "2018"
+description = "A Handle Trait for asynchronous context pipeline."
+homepage = "https://github.com/viz-rs/viz/tree/master/viz-handle"
+license = "MIT/Apache-2.0"
+readme = "README.md"
+
+[dev-dependencies]
+futures = "0.3"
+anyhow = "1.0"
+async-std = { version = "1.5", features = ["attributes"] }
