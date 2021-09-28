@@ -88,7 +88,7 @@
 
 #![forbid(unsafe_code, rust_2018_idioms)]
 #![deny(missing_debug_implementations, nonstandard_style)]
-#![warn(missing_docs, missing_doc_code_examples, unreachable_pub)]
+#![warn(missing_docs, rustdoc::missing_doc_code_examples, unreachable_pub)]
 
 use std::{future::Future, pin::Pin};
 
@@ -128,6 +128,7 @@ where
 #[cfg(test)]
 mod tests {
     use crate::Handle;
+    use anyhow::Error;
     use futures::{executor::block_on, future::BoxFuture};
     use std::{future::Future, pin::Pin, sync::Arc};
 
@@ -388,7 +389,7 @@ mod tests {
 
     #[test]
     fn futures_rt() {
-        block_on(async move {
+        assert!(block_on(async move {
             let mut cx = Context {
                 index: 0,
                 middleware: Vec::new(),
@@ -435,25 +436,25 @@ mod tests {
             println!("mw 0: {}", v.len());
 
             let result = cx.next().await;
-            assert!(result.is_ok());
-            assert_eq!(result.unwrap(), ());
+            assert_eq!(result?, ());
 
             println!("mw 1: {}", v.len());
 
             cx.middleware = v.clone();
 
             let result = cx.next().await;
-            assert!(result.is_ok());
-            assert_eq!(result.unwrap(), ());
+            assert_eq!(result?, ());
 
             println!("mw 2: {}", v.len());
 
             cx.middleware = v.clone();
 
             let result = cx.next().await;
-            assert!(result.is_ok());
-            assert_eq!(result.unwrap(), ());
-        });
+            assert_eq!(result?, ());
+
+            Ok::<_, Error>(())
+        })
+        .is_ok());
     }
 
     #[async_std::test]
@@ -487,24 +488,21 @@ mod tests {
         println!("mw 0: {}", v.len());
 
         let result = cx.next().await;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), ());
+        assert_eq!(result?, ());
 
         println!("mw 1: {}", v.len());
 
         cx.middleware = v.clone();
 
         let result = cx.next().await;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), ());
+        assert_eq!(result?, ());
 
         println!("mw 2: {}", v.len());
 
         cx.middleware = v.clone();
 
         let result = cx.next().await;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), ());
+        assert_eq!(result?, ());
 
         Ok(())
     }

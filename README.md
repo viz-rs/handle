@@ -29,6 +29,7 @@
 use handle::Handle;
 use futures::executor::block_on;
 use std::{future::Future, pin::Pin, sync::Arc};
+use anyhow::Error;
 
 type Result = anyhow::Result<()>;
 type Middleware = dyn for<'a> Handle<'a, Context, Result>;
@@ -281,7 +282,7 @@ impl<'a> Handle<'a, Context, Result> for C {
 }
 
 fn main() {
-    block_on(async move {
+    assert!(block_on(async move {
         let mut cx = Context {
             index: 0,
             middleware: Vec::new(),
@@ -323,8 +324,7 @@ fn main() {
         println!("mw 0: {}", v.len());
 
         let result = cx.next().await;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), ());
+        assert_eq!(result?, ());
 
         v.clear();
 
@@ -350,9 +350,10 @@ fn main() {
         println!("mw 1: {}", v.len());
 
         let result = cx.next().await;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), ());
-    });
+        assert_eq!(result?, ());
+
+        Ok::<_, Error>()
+    }).is_ok());
 }
 ```
 
