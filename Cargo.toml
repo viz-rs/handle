@@ -1,6 +1,6 @@
 [package]
 name = "handle"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Fangdun Cai <cfddream@gmail.com>"]
 edition = "2018"
 description = "A Handle Trait for asynchronous context pipeline."
