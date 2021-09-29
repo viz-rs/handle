@@ -97,10 +97,10 @@ pub trait Handle<'a, Context>
 where
     Self: Send + Sync + 'static,
 {
-    /// Returns `Output`
+    /// The type of value produced on completion.
     type Output;
 
-    /// Invokes the handler within the given `Context` and then returns `Output`
+    /// Invokes the handler within the given `Context` and then returns `Output`.
     #[must_use]
     fn call(
         &'a self,
@@ -116,7 +116,7 @@ where
 {
     type Output = Output;
 
-    #[inline]
+    #[must_use]
     fn call(
         &'a self,
         cx: &'a mut Context,
