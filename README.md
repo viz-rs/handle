@@ -26,14 +26,13 @@
 ## Example
 
 ```rust
-use handle::Handle;
+use handle::{Handle, BoxFuture};
 use futures::executor::block_on;
 use std::{future::Future, pin::Pin, sync::Arc};
 use anyhow::Error;
 
 type Result = anyhow::Result<()>;
 type Middleware = dyn for<'a> Handle<'a, Context, Result>;
-type BoxFuture<'a, T = Result> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
 struct Context {
     index: usize,
@@ -43,7 +42,7 @@ struct Context {
 impl Context {
     async fn next(&mut self) -> Result {
         if let Some(m) = self.middleware.pop() {
-            m.call(Pin::new(self)).await
+            m.call(self).await
         } else {
             Ok(())
         }
@@ -190,10 +189,7 @@ struct A {
 }
 
 impl<'a> Handle<'a, Context, Result> for A {
-    fn call(
-        &'a self,
-        cx: &'a mut Context
-    ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+    fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
         Box::pin(async move {
             let size = cx.middleware.len();
             let repeat = "-".repeat(2 * size);
@@ -222,10 +218,7 @@ struct B {
 }
 
 impl<'a> Handle<'a, Context, Result> for B {
-    fn call(
-        &'a self,
-        cx: &'a mut Context
-    ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+    fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
         Box::pin(async move {
             let size = cx.middleware.len();
             let repeat = "-".repeat(2 * size);
@@ -254,10 +247,7 @@ struct C {
 }
 
 impl<'a> Handle<'a, Context, Result> for C {
-    fn call(
-        &'a self,
-        cx: &'a mut Context
-    ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+    fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
         Box::pin(async move {
             let size = cx.middleware.len();
             let repeat = "-".repeat(2 * size);

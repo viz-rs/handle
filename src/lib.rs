@@ -5,12 +5,11 @@
 //! Examples
 //!
 //! ```
-//! use handle::Handle;
+//! use handle::{Handle, BoxFuture};
 //! use futures::executor::block_on;
-//! use std::{future::Future, pin::Pin, sync::Arc};
+//! use std::{future::Future, sync::Arc};
 //!
 //! type Result = anyhow::Result<()>;
-//! type BoxFuture<'a, T = Result> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 //!
 //! struct Context {
 //!     index: usize,
@@ -50,10 +49,7 @@
 //! impl<'a> Handle<'a, Context> for A {
 //!     type Output = Result;
 //!
-//!     fn call(
-//!         &'a self,
-//!         cx: &'a mut Context
-//!     ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+//!     fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
 //!         Box::pin(async move {
 //!             let size = cx.middleware.len();
 //!             let repeat = "-".repeat(2 * size);
@@ -90,7 +86,10 @@
 #![deny(missing_debug_implementations, nonstandard_style)]
 #![warn(missing_docs, rustdoc::missing_doc_code_examples, unreachable_pub)]
 
-use std::{future::Future, pin::Pin};
+/// An owned dynamically typed [`Future`] for use in cases where you can't
+/// statically type your result or need to add some indirection.
+pub type BoxFuture<'a, Output> =
+    std::pin::Pin<Box<dyn 'a + Send + std::future::Future<Output = Output>>>;
 
 /// A handle trait for asynchronous context pipeline.
 pub trait Handle<'a, Context>
@@ -102,35 +101,29 @@ where
 
     /// Invokes the handler within the given `Context` and then returns `Output`.
     #[must_use]
-    fn call(
-        &'a self,
-        cx: &'a mut Context,
-    ) -> Pin<Box<dyn Future<Output = Self::Output> + Send + 'a>>;
+    fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output>;
 }
 
 impl<'a, Context, Output, F, Fut> Handle<'a, Context> for F
 where
     F: Send + Sync + 'static + Fn(&'a mut Context) -> Fut,
-    Fut: Future<Output = Output> + Send + 'a,
+    Fut: std::future::Future<Output = Output> + Send + 'a,
     Context: 'a,
 {
     type Output = Output;
 
     #[must_use]
-    fn call(
-        &'a self,
-        cx: &'a mut Context,
-    ) -> Pin<Box<dyn Future<Output = Self::Output> + Send + 'a>> {
+    fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
         Box::pin((self)(cx))
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::Handle;
+    use crate::{BoxFuture, Handle};
     use anyhow::Error;
-    use futures::{executor::block_on, future::BoxFuture};
-    use std::{future::Future, pin::Pin, sync::Arc};
+    use futures::executor::block_on;
+    use std::{future::Future, sync::Arc};
 
     type Result = anyhow::Result<()>;
     type Middleware = dyn for<'a> Handle<'a, Context, Output = Result>;
@@ -292,10 +285,7 @@ mod tests {
     impl<'a> Handle<'a, Context> for A {
         type Output = Result;
 
-        fn call(
-            &'a self,
-            cx: &'a mut Context,
-        ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+        fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
             Box::pin(async move {
                 let size = cx.middleware.len();
                 let repeat = "-".repeat(2 * size);
@@ -326,10 +316,7 @@ mod tests {
     impl<'a> Handle<'a, Context> for B {
         type Output = Result;
 
-        fn call(
-            &'a self,
-            cx: &'a mut Context,
-        ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+        fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
             Box::pin(async move {
                 let size = cx.middleware.len();
                 let repeat = "-".repeat(2 * size);
@@ -360,10 +347,7 @@ mod tests {
     impl<'a> Handle<'a, Context> for C {
         type Output = Result;
 
-        fn call(
-            &'a self,
-            cx: &'a mut Context,
-        ) -> Pin<Box<dyn Future<Output = Result> + Send + 'a>> {
+        fn call(&'a self, cx: &'a mut Context) -> BoxFuture<'a, Self::Output> {
             Box::pin(async move {
                 let size = cx.middleware.len();
                 let repeat = "-".repeat(2 * size);
