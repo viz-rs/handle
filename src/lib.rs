@@ -119,6 +119,7 @@ where
 }
 
 #[cfg(test)]
+#[allow(clippy::unit_cmp)]
 mod tests {
     use crate::{BoxFuture, Handle};
     use anyhow::Error;
@@ -164,6 +165,7 @@ mod tests {
         fut
     }
 
+    #[allow(clippy::needless_lifetimes)]
     fn b<'a>(cx: &'a mut Context) -> BoxFuture<'a, Result> {
         let size = cx.middleware.len();
         let repeat = "-".repeat(2 * size);
@@ -210,6 +212,7 @@ mod tests {
         })
     }
 
+    #[allow(clippy::needless_lifetimes)]
     fn d<'a>(cx: &'a mut Context) -> impl Future<Output = Result> + 'a {
         let size = cx.middleware.len();
         let repeat = "-".repeat(2 * size);
@@ -379,16 +382,17 @@ mod tests {
                 middleware: Vec::new(),
             };
 
-            let mut v: Vec<Box<Middleware>> = vec![];
-            v.push(Box::new(f));
-            v.push(Box::new(e));
-            v.push(Box::new(d));
-            v.push(Box::new(c));
-            v.push(Box::new(b));
-            v.push(Box::new(a));
-            v.push(Box::new(A { index: 1 }));
-            v.push(Box::new(B { index: 2 }));
-            v.push(Box::new(C { index: 3 }));
+            let mut v: Vec<Box<Middleware>> = vec![
+                Box::new(f),
+                Box::new(e),
+                Box::new(d),
+                Box::new(c),
+                Box::new(b),
+                Box::new(a),
+                Box::new(A { index: 1 }),
+                Box::new(B { index: 2 }),
+                Box::new(C { index: 3 }),
+            ];
             v.reverse();
             assert_eq!(v.len(), 9);
 
@@ -419,22 +423,22 @@ mod tests {
             cx.middleware = v.clone();
             println!("mw 0: {}", v.len());
 
-            let result = cx.next().await;
-            assert_eq!(result?, ());
+            let result = cx.next().await?;
+            assert_eq!(result, ());
 
             println!("mw 1: {}", v.len());
 
             cx.middleware = v.clone();
 
-            let result = cx.next().await;
-            assert_eq!(result?, ());
+            let result = cx.next().await?;
+            assert_eq!(result, ());
 
             println!("mw 2: {}", v.len());
 
             cx.middleware = v.clone();
 
-            let result = cx.next().await;
-            assert_eq!(result?, ());
+            let result = cx.next().await?;
+            assert_eq!(result, ());
 
             Ok::<_, Error>(())
         })
@@ -471,22 +475,22 @@ mod tests {
         cx.middleware = v.clone();
         println!("mw 0: {}", v.len());
 
-        let result = cx.next().await;
-        assert_eq!(result?, ());
+        let result = cx.next().await?;
+        assert_eq!(result, ());
 
         println!("mw 1: {}", v.len());
 
         cx.middleware = v.clone();
 
-        let result = cx.next().await;
-        assert_eq!(result?, ());
+        let result = cx.next().await?;
+        assert_eq!(result, ());
 
         println!("mw 2: {}", v.len());
 
         cx.middleware = v.clone();
 
-        let result = cx.next().await;
-        assert_eq!(result?, ());
+        let result = cx.next().await?;
+        assert_eq!(result, ());
 
         Ok(())
     }

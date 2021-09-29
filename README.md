@@ -278,43 +278,44 @@ fn main() {
             middleware: Vec::new(),
         };
 
-        let mut v: Vec<Box<Middleware>> = vec![];
-        v.push(Box::new(a));
-        v.push(Box::new(b));
-        v.push(Box::new(c));
-        v.push(Box::new(d));
-        v.push(Box::new(e));
-        v.push(Box::new(f));
+        let mut v: Vec<Box<Middleware>> = vec![
+            Box::new(a),
+            Box::new(b),
+            Box::new(c),
+            Box::new(d),
+            Box::new(e),
+            Box::new(f),
+        ];
 
-        let mut v: Vec<Arc<Middleware>> = vec![];
+        let mut v: Vec<Arc<Middleware>> = vec![
+            // Handled it!
+            // A Closure cant use `cx.next()` in async block.
+            Arc::new(|cx: &mut Context| {
+                assert_eq!(cx.index, 12);
 
-        // Handled it!
-        // A Closure cant use `cx.next()` in async block.
-        v.push(Arc::new(|cx: &mut Context| {
-            assert_eq!(cx.index, 12);
+                println!("We handled it!");
 
-            println!("We handled it!");
-
-            async move {
-                // assert_eq!(cx.index, 12); // compiled panic!
-                Ok(())
-            }
-        }));
-        v.push(Arc::new(C { index: 3 }));
-        v.push(Arc::new(B { index: 2 }));
-        v.push(Arc::new(A { index: 1 }));
-        v.push(Arc::new(f));
-        v.push(Arc::new(e));
-        v.push(Arc::new(d));
-        v.push(Arc::new(c));
-        v.push(Arc::new(b));
-        v.push(Arc::new(a));
+                async move {
+                    // assert_eq!(cx.index, 12); // compiled panic!
+                    Ok(())
+                }
+            }),
+            Arc::new(C { index: 3 }),
+            Arc::new(B { index: 2 }),
+            Arc::new(A { index: 1 }),
+            Arc::new(f),
+            Arc::new(e),
+            Arc::new(d),
+            Arc::new(c),
+            Arc::new(b),
+            Arc::new(a),
+        ];
 
         cx.middleware = v.clone();
         println!("mw 0: {}", v.len());
 
-        let result = cx.next().await;
-        assert_eq!(result?, ());
+        let result = cx.next().await?;
+        assert_eq!(result, ());
 
         v.clear();
 
@@ -339,8 +340,8 @@ fn main() {
 
         println!("mw 1: {}", v.len());
 
-        let result = cx.next().await;
-        assert_eq!(result?, ());
+        let result = cx.next().await?;
+        assert_eq!(result, ());
 
         Ok::<_, Error>()
     }).is_ok());
